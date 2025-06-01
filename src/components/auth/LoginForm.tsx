@@ -2,27 +2,21 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { Form, useForm } from "react-hook-form";
 import * as z from "zod";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+
 import { Mail, KeyRound, ShieldQuestion, Loader2 } from 'lucide-react';
 import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase"; // Ensure this path is correct and Firebase is initialized
-import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { useToast } from "../../hooks/use-toast";
+import { auth } from "../../lib/firebase";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
+import { Separator } from "@radix-ui/react-dropdown-menu";
 
 
 const formSchema = z.object({
