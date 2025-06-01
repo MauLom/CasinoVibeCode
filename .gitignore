@@ -1,0 +1,67 @@
+# Node modules
+/node_modules/
+
+# Build output
+/.next/
+/out/
+
+# Next.js build cache
+/.next/cache/
+
+# Production environment variables
+.env.production.local
+
+# Local environment variables
+.env.local
+.env.development.local
+.env.test.local
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.log
+
+# Dependency directories
+/.pnp/
+/.pnp.js
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Testing
+/coverage/
+
+# Optional: if usas Yarn v2+
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# Optional: si despliegas con Vercel
+.vercel/
+/.vercelignore
+
+# Optional: si generas reportes de análisis estático o cobertura
+/.nyc_output/
+/coverage/
+report/
+
+# Optional: si usas storybook
+/storybook-static/
+
+# Optional: archivos de lock usados por pnpm
+/pnpm-lock.yaml
+
+# Optional: Next.js telemetry

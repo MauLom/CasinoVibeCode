@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Poppins', sans-serif;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 20%; /* Dark Charcoal Gray #333333 */
+    --foreground: 0 0% 95%; /* Light Gray #F2F2F2 */
+
+    --card: 0 0% 25%; /* Slightly Lighter Charcoal #404040 */
+    --card-foreground: 0 0% 95%; /* Light Gray #F2F2F2 */
+
+    --popover: 0 0% 15%; /* Darker for popovers */
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 51 100% 50%; /* Vibrant Gold #FFD700 */
+    --primary-foreground: 46 100% 15%; /* Dark for text on gold #4A3B00 */
+
+    --secondary: 271 76% 60%; /* Lighter Purple for secondary elements */
+    --secondary-foreground: 271 76% 95%;
+
+    --muted: 0 0% 30%; /* Muted gray */
+    --muted-foreground: 0 0% 70%; /* Lighter muted text */
+
+    --accent: 271 76% 53%; /* Electric Purple #8A2BE2 */
+    --accent-foreground: 271 100% 97%; /* Light for text on purple #F5EFFF */
+
+    --destructive: 0 72% 51%; /* Red for destructive actions */
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 35%; /* Subtle Border #595959 */
+    --input: 0 0% 15%; /* Darker Input Background #262626 */
+    --ring: 271 76% 53%; /* Accent color for rings */
+
+    --radius: 0.5rem;
+
+    /* Chart colors - can be adjusted based on gold/purple theme */
+    --chart-1: 51 100% 50%; /* Gold */
+    --chart-2: 271 76% 53%; /* Purple */
+    --chart-3: 51 80% 60%;  /* Lighter Gold */
+    --chart-4: 271 60% 65%; /* Lighter Purple */
+    --chart-5: 0 0% 60%;   /* Neutral Gray */
+
+    /* Sidebar specific colors from ui/sidebar.tsx */
+    --sidebar-background: 0 0% 15%; /* Darker than main bg */
+    --sidebar-foreground: 0 0% 85%; /* Light text for sidebar */
+    --sidebar-primary: 51 100% 50%; /* Gold for active/primary items */
+    --sidebar-primary-foreground: 46 100% 15%; /* Dark text on gold */
+    --sidebar-accent: 271 76% 53%; /* Purple for hover/accent items */
+    --sidebar-accent-foreground: 271 100% 97%; /* Light text on purple */
+    --sidebar-border: 0 0% 25%; /* Border for sidebar elements */
+    --sidebar-ring: 271 76% 53%; /* Ring color for focus */
+  }
+
+  .dark {
+    --background: 0 0% 20%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 25%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 15%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 51 100% 50%;
+    --primary-foreground: 46 100% 15%;
+    --secondary: 271 76% 60%;
+    --secondary-foreground: 271 76% 95%;
+    --muted: 0 0% 30%;
+    --muted-foreground: 0 0% 70%;
+    --accent: 271 76% 53%;
+    --accent-foreground: 271 100% 97%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 35%;
+    --input: 0 0% 15%;
+    --ring: 271 76% 53%;
+
+    --chart-1: 51 100% 50%;
+    --chart-2: 271 76% 53%;
+    --chart-3: 51 80% 60%;
+    --chart-4: 271 60% 65%;
+    --chart-5: 0 0% 60%;
+
+    --sidebar-background: 0 0% 15%;
+    --sidebar-foreground: 0 0% 85%;
+    --sidebar-primary: 51 100% 50%;
+    --sidebar-primary-foreground: 46 100% 15%;
+    --sidebar-accent: 271 76% 53%;
+    --sidebar-accent-foreground: 271 100% 97%;
+    --sidebar-border: 0 0% 25%;
+    --sidebar-ring: 271 76% 53%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-headline;
+  }
+}
+
+@layer utilities {
+  .neon-glow-primary {
+    filter: drop-shadow(0 0 6px hsl(var(--primary)/0.8)) drop-shadow(0 0 12px hsl(var(--primary)/0.5));
+  }
+  .neon-glow-accent {
+    filter: drop-shadow(0 0 6px hsl(var(--accent)/0.8)) drop-shadow(0 0 12px hsl(var(--accent)/0.5));
+  }
+  .text-glow-primary {
+    text-shadow: 0 0 5px hsl(var(--primary)/0.7), 0 0 10px hsl(var(--primary)/0.5);
+  }
+   .text-glow-accent {
+    text-shadow: 0 0 5px hsl(var(--accent)/0.7), 0 0 10px hsl(var(--accent)/0.5);
+  }
+}
