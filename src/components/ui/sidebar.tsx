@@ -1,62 +1,59 @@
+"use client";
 
-"use client"
-
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { VariantProps, cva } from "class-variance-authority"
-import { PanelLeft } from "lucide-react"
-
-import { useIsMobile } from "@/hooks/use-mobile"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent as SheetPrimitiveContent } from "@/components/ui/sheet" // Renamed to avoid conflict
-import { Skeleton } from "@/components/ui/skeleton"
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { VariantProps, cva } from "class-variance-authority";
+import { PanelLeft } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Sheet, SheetContent as SheetPrimitiveContent } from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from "@/components/ui/tooltip";
 
-const SIDEBAR_COOKIE_NAME = "sidebar_state"
-const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-const SIDEBAR_WIDTH = "16rem" // 256px
-const SIDEBAR_WIDTH_MOBILE = "18rem" // 288px
-const SIDEBAR_WIDTH_ICON = "3.5rem" // 56px, assuming p-2 on items (0.5rem each side) + icon size
-const SIDEBAR_KEYBOARD_SHORTCUT = "b"
+const SIDEBAR_COOKIE_NAME = "sidebar_state";
+const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
+const SIDEBAR_WIDTH = "16rem"; // 256px
+const SIDEBAR_WIDTH_MOBILE = "18rem";
+const SIDEBAR_WIDTH_ICON = "3.5rem";
+const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
 type SidebarContext = {
-  state: "expanded" | "collapsed"
-  open: boolean
-  setOpen: (open: boolean) => void
-  openMobile: boolean
-  setOpenMobile: (open: boolean) => void
-  isMobile: boolean
-  toggleSidebar: () => void
-  variant: "sidebar" | "floating" | "inset"
-  collapsible: "offcanvas" | "icon" | "none"
-  side: "left" | "right"
-}
+  state: "expanded" | "collapsed";
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  openMobile: boolean;
+  setOpenMobile: (open: boolean) => void;
+  isMobile: boolean;
+  toggleSidebar: () => void;
+  variant: "sidebar" | "floating" | "inset";
+  collapsible: "offcanvas" | "icon" | "none";
+  side: "left" | "right";
+};
 
-const SidebarContext = React.createContext<SidebarContext | null>(null)
+const SidebarContext = React.createContext<SidebarContext | null>(null);
 
 function useSidebar() {
-  const context = React.useContext(SidebarContext)
+  const context = React.useContext(SidebarContext);
   if (!context) {
-    throw new Error("useSidebar must be used within a SidebarProvider.")
+    throw new Error("useSidebar must be used within a SidebarProvider.");
   }
-
-  return context
+  return context;
 }
 
 const SidebarProvider = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> & {
-    defaultOpen?: boolean
-    open?: boolean
-    onOpenChange?: (open: boolean) => void
+    defaultOpen?: boolean;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
   }
 >(
   (
@@ -71,55 +68,63 @@ const SidebarProvider = React.forwardRef<
     },
     ref
   ) => {
-    const isMobile = useIsMobile()
-    const [openMobile, setOpenMobile] = React.useState(false)
+    const isMobile = useIsMobile();
+    const [openMobile, setOpenMobile] = React.useState(false);
 
-    const [_open, _setOpen] = React.useState(() => {
-        if (typeof window !== "undefined") {
-            const cookieValue = document.cookie
-            .split("; ")
-            .find((row) => row.startsWith(`${SIDEBAR_COOKIE_NAME}=`))
-            ?.split("=")[1];
-            if (cookieValue) {
-            return cookieValue === "true";
-            }
+    // 1) Iniciamos open con defaultOpen (SSRand primer render client coinciden)
+    const [_open, _setOpen] = React.useState<boolean>(defaultOpen);
+
+    // 2) Después de montar en el cliente, leemos la cookie para sincronizar estado
+    React.useEffect(() => {
+      // Solo ejecuta esto en el cliente
+      const cookieValue = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith(`${SIDEBAR_COOKIE_NAME}=`))
+        ?.split("=")[1];
+      if (cookieValue !== undefined) {
+        const fromCookie = cookieValue === "true";
+        // Si el prop open viene desde arriba, respetamos esa prop
+        if (openProp === undefined) {
+          _setOpen(fromCookie);
         }
-        return defaultOpen;
-    });
+      }
+    }, [openProp]);
 
-    const open = openProp ?? _open
-    
+    // 3) Determinamos el “open” real: viene de openProp (controlado externamente) o del estado interno
+    const open = openProp ?? _open;
+
+    // 4) Con cada cambio de `open`, guardamos en cookie y notificamos
     const setOpen = React.useCallback(
       (value: boolean | ((value: boolean) => boolean)) => {
-        const openState = typeof value === "function" ? value(open) : value
+        const openState = typeof value === "function" ? value(open) : value;
         if (setOpenProp) {
-          setOpenProp(openState)
+          setOpenProp(openState);
         } else {
-          _setOpen(openState)
+          _setOpen(openState);
         }
         if (typeof window !== "undefined") {
-            document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+          document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
         }
       },
       [setOpenProp, open]
-    )
+    );
 
+    // 5) Lógica para sincronizar mobile/desktop
     React.useEffect(() => {
-        if(isMobile && open) {
-            setOpen(false); // Collapse on desktop if mobile opens
-            setOpenMobile(true);
-        } else if (!isMobile && openMobile) {
-            setOpenMobile(false); // Close mobile if desktop opens
-            setOpen(true);
-        }
+      if (isMobile && open) {
+        setOpen(false);
+        setOpenMobile(true);
+      } else if (!isMobile && openMobile) {
+        setOpenMobile(false);
+        setOpen(true);
+      }
     }, [isMobile, open, openMobile, setOpen]);
-
 
     const toggleSidebar = React.useCallback(() => {
       return isMobile
         ? setOpenMobile((current) => !current)
-        : setOpen((current) => !current)
-    }, [isMobile, setOpen, setOpenMobile])
+        : setOpen((current) => !current);
+    }, [isMobile, setOpen, setOpenMobile]);
 
     React.useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
@@ -127,18 +132,16 @@ const SidebarProvider = React.forwardRef<
           event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
           (event.metaKey || event.ctrlKey)
         ) {
-          event.preventDefault()
-          toggleSidebar()
+          event.preventDefault();
+          toggleSidebar();
         }
-      }
+      };
+      window.addEventListener("keydown", handleKeyDown);
+      return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [toggleSidebar]);
 
-      window.addEventListener("keydown", handleKeyDown)
-      return () => window.removeEventListener("keydown", handleKeyDown)
-    }, [toggleSidebar])
+    const state = open ? "expanded" : "collapsed";
 
-    const state = open ? "expanded" : "collapsed"
-    // These are dummy values for variant, collapsible, side as they are defined on Sidebar component directly
-    // This is a simplification. Ideally, these would also be part of context if they can change or affect children widely.
     const contextValue = React.useMemo<SidebarContext>(
       () => ({
         state,
@@ -148,12 +151,12 @@ const SidebarProvider = React.forwardRef<
         openMobile,
         setOpenMobile,
         toggleSidebar,
-        variant: "sidebar", // Default, actual value comes from Sidebar component props
-        collapsible: "icon", // Default
-        side: "left", // Default
+        variant: "sidebar",
+        collapsible: "icon",
+        side: "left",
       }),
       [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
-    )
+    );
 
     return (
       <SidebarContext.Provider value={contextValue}>
@@ -168,7 +171,7 @@ const SidebarProvider = React.forwardRef<
               } as React.CSSProperties
             }
             className={cn(
-              "group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-sidebar-background", 
+              "group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-sidebar-background",
               className
             )}
             ref={ref}
@@ -178,10 +181,10 @@ const SidebarProvider = React.forwardRef<
           </div>
         </TooltipProvider>
       </SidebarContext.Provider>
-    )
+    );
   }
-)
-SidebarProvider.displayName = "SidebarProvider"
+);
+SidebarProvider.displayName = "SidebarProvider";
 
 const Sidebar = React.forwardRef<
   HTMLDivElement,
