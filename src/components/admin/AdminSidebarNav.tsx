@@ -4,20 +4,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
-import { adminNavItems, type AdminNavItem } from "@/config/adminNav"; // Import items directly
-import { cn } from "@/lib/utils";
-import {
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarFooter,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  useSidebar,
-} from "@/components/ui/sidebar";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "../ui/sidebar";
+import { adminNavItems } from "../../config/adminNav";
+import { ScrollArea } from "../ui/scroll-area";
+import { Button } from "../ui/button";
+import { cn } from "../../lib/utils";
+
 
 
 interface AdminSidebarNavProps {
@@ -54,7 +46,7 @@ export function AdminSidebarNav({ /* items, */ className }: AdminSidebarNavProps
       
       <SidebarContent asChild>
         <ScrollArea className="h-full">
-          <SidebarMenu className="p-2">
+          <SidebarMenu  className="p-2">
             {currentAdminItems.map((item, index) => { // Use currentAdminItems
               const Icon = item.icon;
               const isActive = item.href === '/admin' && pathname === '/admin' || (item.href !== '/admin' && pathname?.startsWith(item.href));
