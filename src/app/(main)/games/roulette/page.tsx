@@ -1,7 +1,7 @@
 // src/app/(main)/games/roulette/page.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -13,96 +13,93 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RotateCcw, Target } from "lucide-react";
+import { motion, useAnimation } from "framer-motion";
 
-const RED_NUMBERS = new Set([
-  1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36,
-]);
-const BLACK_NUMBERS = new Set(
-  Array.from({ length: 37 }, (_, i) => i).filter((n) => n !== 0 && !RED_NUMBERS.has(n))
-);
+const SYMBOLS = [
+  { type: "red", icon: "♦", multiplier: 2 },
+  { type: "green", icon: "🟢", multiplier: 14 },
+  { type: "purple", icon: "♠", multiplier: 2 },
+  { type: "star", icon: "★", multiplier: 7 },
+];
 
-type BetType = "number" | "color";
-type ColorBet = "red" | "black";
+type SymbolType = (typeof SYMBOLS)[number]["type"];
+
+type SymbolInstance = {
+  type: SymbolType;
+  icon: string;
+  multiplier: number;
+};
 
 export default function RoulettePage() {
-  // Player balance (in ETH)
-  const [balance, setBalance] = useState<number>(1.23);
-  // Current bet amount
-  const [betAmount, setBetAmount] = useState<number>(0.05);
-  // Bet type & value
-  const [betType, setBetType] = useState<BetType>("number");
-  const [betNumber, setBetNumber] = useState<number>(1);
-  const [betColor, setBetColor] = useState<ColorBet>("red");
-  // Last spin result
-  const [spinResult, setSpinResult] = useState<number | null>(null);
-  const [spinColor, setSpinColor] = useState<"red" | "black" | "green" | null>(null);
-  // Last win amount
-  const [lastWin, setLastWin] = useState<number>(0);
-  // Message to user
+  const [balance, setBalance] = useState<number>(100);
+  const [betAmount, setBetAmount] = useState<number>(10);
+  const [selectedSymbol, setSelectedSymbol] = useState<SymbolType | null>(null);
+  const [history, setHistory] = useState<SymbolInstance[]>([]);
+  const [rolling, setRolling] = useState(false);
+  const [result, setResult] = useState<SymbolInstance | null>(null);
   const [message, setMessage] = useState<string>("");
 
-  // Spin logic
-  function spinWheel() {
-    if (betAmount <= 0 || betAmount > balance) {
-      setMessage("Invalid bet amount.");
-      return;
-    }
+  const controls = useAnimation();
+  const [sequence, setSequence] = useState<SymbolInstance[]>([]);
 
-    // Deduct bet from balance immediately
-    setBalance((prev) => parseFloat((prev - betAmount).toFixed(4)));
+  function rollRandomSymbol(): SymbolInstance {
+    const weights: Record<SymbolType, number> = {
+      red: 45,
+      green: 5,
+      purple: 45,
+      star: 5,
+    };
 
-    // Random number 0–36
-    const result = Math.floor(Math.random() * 37);
-    setSpinResult(result);
+    const weightedList: SymbolInstance[] = SYMBOLS.flatMap((s) =>
+      Array(weights[s.type]).fill(s)
+    );
 
-    // Determine color
-    let color: "red" | "black" | "green";
-    if (result === 0) {
-      color = "green";
-    } else if (RED_NUMBERS.has(result)) {
-      color = "red";
-    } else {
-      color = "black";
-    }
-    setSpinColor(color);
-
-    // Calculate winnings
-    let win = 0;
-    if (betType === "number") {
-      if (result === betNumber) {
-        // Payout 35:1 plus return bet
-        win = betAmount * 36;
-      }
-    } else {
-      // color bet
-      if (
-        (betColor === "red" && color === "red") ||
-        (betColor === "black" && color === "black")
-      ) {
-        // Payout 1:1 plus return bet
-        win = betAmount * 2;
-      }
-    }
-
-    if (win > 0) {
-      setBalance((prev) => parseFloat((prev + win).toFixed(4)));
-      setLastWin(win - betAmount);
-      setMessage(`You won ${ (win - betAmount).toFixed(4) } ETH!`);
-    } else {
-      setLastWin(0);
-      setMessage("You lost this round.");
-    }
+    return weightedList[Math.floor(Math.random() * weightedList.length)];
   }
 
-  // Clear bet selections
-  function clearBets() {
-    setBetAmount(0);
-    setBetNumber(1);
-    setBetColor("red");
+  async function spin() {
+    if (!selectedSymbol || betAmount <= 0 || betAmount > balance || rolling) return;
+
+    setRolling(true);
     setMessage("");
-    setSpinResult(null);
-    setSpinColor(null);
-    setLastWin(0);
+    setBalance((b) => b - betAmount);
+
+    const result = rollRandomSymbol();
+    const resultIndex = 40;
+    const filler = Array.from({ length: resultIndex }, () =>
+      SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]
+    );
+    const spinSeq = [...filler, result, ...filler.slice(-30)];
+
+    setSequence(spinSeq);
+
+    await controls.start({
+      x: `-${resultIndex * 64}px`,
+      transition: { duration: 2.5, ease: "easeInOut" },
+    });
+
+    setRolling(false);
+    setResult(result);
+    setHistory((prev) => [result, ...prev.slice(0, 49)]);
+
+    if (result.type === selectedSymbol) {
+      const winnings = betAmount * result.multiplier;
+      setBalance((b) => b + winnings);
+      setMessage(`You won ${winnings.toFixed(2)}!`);
+    } else {
+      setMessage("You lost.");
+    }
+
+    controls.set({ x: 0 });
+    setSequence([]);
+  }
+
+  function clear() {
+    setSelectedSymbol(null);
+    setBetAmount(10);
+    setMessage("");
+    setResult(null);
+    setSequence([]);
   }
 
   return (
@@ -111,209 +108,88 @@ export default function RoulettePage() {
         <Target className="w-16 h-16 mx-auto mb-4 text-primary neon-glow-primary" />
         <h1 className="text-4xl font-bold text-primary text-glow-primary">Roulette</h1>
         <p className="text-lg text-muted-foreground">
-          Place your bets and spin the wheel of fortune!
+          Place your bets and spin the wheel!
         </p>
       </header>
 
       <Card className="shadow-xl">
         <CardHeader>
-          <CardTitle className="text-2xl">European Roulette</CardTitle>
-          <CardDescription>
-            Classic single-zero roulette for the best odds.
-          </CardDescription>
+          <CardTitle className="text-2xl">Crypto Roulette</CardTitle>
+          <CardDescription>Choose a symbol. Match it to win big!</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Wheel Result Display */}
-          <div className="aspect-video bg-muted rounded-lg flex flex-col items-center justify-center overflow-hidden">
-            {spinResult === null ? (
-              <p className="text-foreground">Spin the wheel to see the result!</p>
-            ) : (
-              <>
-                <p className="text-4xl font-bold">
-                  {spinResult === 0 ? "0" : spinResult}
-                </p>
-                <p className={`text-2xl ${spinColor === "red" ? "text-red-500" : spinColor === "black" ? "text-black" : "text-green-600"}`}>
-                  {spinColor?.toUpperCase()}
-                </p>
-              </>
-            )}
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="bg-card/50">
-              <CardHeader>
-                <CardTitle className="text-lg">Your Balance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold text-primary">
-                  {balance.toFixed(4)} ETH
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="bg-card/50">
-              <CardHeader>
-                <CardTitle className="text-lg">Current Bet</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">{betAmount.toFixed(4)} ETH</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-card/50">
-              <CardHeader>
-                <CardTitle className="text-lg">Last Win</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold text-green-400">
-                  {lastWin.toFixed(4)} ETH
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Betting Controls */}
-          <div className="space-y-4">
-            <p className="text-center text-muted-foreground">
-              Place your bets on the table below.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="betAmount" className="text-sm font-medium">
-                  Bet Amount (ETH)
-                </Label>
-                <Input
-                  type="number"
-                  id="betAmount"
-                  value={betAmount}
-                  step="0.001"
-                  min="0"
-                  onChange={(e) =>
-                    setBetAmount(parseFloat(e.currentTarget.value) || 0)
-                  }
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Bet Type</Label>
-                <div className="mt-1 flex space-x-4">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name="betType"
-                      checked={betType === "number"}
-                      onChange={() => setBetType("number")}
-                      className="cursor-pointer"
-                    />
-                    <span>Number</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name="betType"
-                      checked={betType === "color"}
-                      onChange={() => setBetType("color")}
-                      className="cursor-pointer"
-                    />
-                    <span>Color</span>
-                  </label>
-                </div>
-              </div>
-              {betType === "number" && (
-                <div>
-                  <Label htmlFor="betNumber" className="text-sm font-medium">
-                    Choose Number (0–36)
-                  </Label>
-                  <Input
-                    type="number"
-                    id="betNumber"
-                    value={betNumber}
-                    min={0}
-                    max={36}
-                    onChange={(e) =>
-                      setBetNumber(Math.min(36, Math.max(0, parseInt(e.currentTarget.value) || 0)))
-                    }
-                    className="mt-1"
-                  />
-                </div>
-              )}
-              {betType === "color" && (
-                <div>
-                  <Label className="text-sm font-medium">Choose Color</Label>
-                  <div className="mt-1 flex space-x-4">
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        name="betColor"
-                        checked={betColor === "red"}
-                        onChange={() => setBetColor("red")}
-                        className="cursor-pointer"
-                      />
-                      <span className="text-red-500">Red</span>
-                    </label>
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        name="betColor"
-                        checked={betColor === "black"}
-                        onChange={() => setBetColor("black")}
-                        className="cursor-pointer"
-                      />
-                      <span className="text-black">Black</span>
-                    </label>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-center space-x-4">
+          <div className="flex flex-wrap justify-center gap-4">
+            {SYMBOLS.map((symbol) => (
               <Button
-                size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                onClick={spinWheel}
-                disabled={betAmount <= 0 || betAmount > balance}
+                key={symbol.type}
+                variant={selectedSymbol === symbol.type ? "default" : "outline"}
+                className={`text-xl px-6 py-4`}
+                onClick={() => setSelectedSymbol(symbol.type)}
               >
-                <RotateCcw className="mr-2 h-5 w-5" /> Spin Wheel
+                {symbol.icon} x{symbol.multiplier}
               </Button>
-              <Button size="lg" variant="outline" onClick={clearBets}>
-                Clear Bets
-              </Button>
-            </div>
+            ))}
+          </div>
 
-            {message && (
-              <p className="text-center mt-4 text-lg font-medium">{message}</p>
-            )}
+          <div className="relative overflow-hidden border rounded-lg h-16 bg-muted">
+            <div className="absolute inset-y-0 left-1/2 w-1 border-l-2 border-yellow-400 z-10" />
+            <motion.div
+              className="flex items-center h-16 gap-4 px-2 min-w-[200%]"
+              animate={controls}
+              initial={{ x: 0 }}
+            >
+              {sequence.map((s, i) => (
+                <span key={i} className="text-3xl min-w-[64px] text-center">
+                  {s.icon}
+                </span>
+              ))}
+            </motion.div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            <Card className="bg-card/50 p-4">
+              <p className="text-sm text-muted-foreground">Balance</p>
+              <p className="text-2xl font-bold text-primary">{balance.toFixed(2)} USDT</p>
+            </Card>
+            <Card className="bg-card/50 p-4">
+              <p className="text-sm text-muted-foreground">Bet</p>
+              <Input
+                type="number"
+                value={betAmount}
+                onChange={(e) => setBetAmount(parseFloat(e.target.value) || 0)}
+              />
+            </Card>
+            <Card className="bg-card/50 p-4">
+              <p className="text-sm text-muted-foreground">Result</p>
+              <p className="text-2xl font-bold">
+                {rolling ? "Spinning..." : result ? `${result.icon}` : "-"}
+              </p>
+            </Card>
+          </div>
+
+          <div className="flex justify-center space-x-4">
+            <Button size="lg" onClick={spin} disabled={rolling || !selectedSymbol}>
+              <RotateCcw className="mr-2 h-5 w-5" /> Spin
+            </Button>
+            <Button size="lg" variant="outline" onClick={clear}>
+              Clear
+            </Button>
+          </div>
+
+          {message && <p className="text-center mt-4 text-lg">{message}</p>}
+
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold mb-2">History</h3>
+            <div className="flex gap-1 overflow-x-auto">
+              {history.map((s, i) => (
+                <span key={i} className="text-2xl">
+                  {s.icon}
+                </span>
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>
-
-      <section>
-        <h2 className="text-2xl font-semibold mb-4">How to Play</h2>
-        <Card className="bg-card/50">
-          <CardContent className="pt-6 space-y-2 text-sm text-muted-foreground">
-            <p>1. Select your chip value (bet amount).</p>
-            <p>2. Choose to bet on a specific number (0–36) or on a color (Red/Black).</p>
-            <p>3. Click "Spin Wheel" to spin. A random number 0–36 is chosen.</p>
-            <p>
-              4. If you bet on a number and it matches, you win 35× your bet. If you
-              bet on a color and it matches (excluding 0 which is green), you win 1×
-              your bet.
-            </p>
-            <p>5. Winnings are credited to your balance automatically.</p>
-          </CardContent>
-        </Card>
-      </section>
     </div>
   );
-}
-
-// Helper functions outside component
-function getColorOfNumber(n: number): "red" | "black" | "green" {
-  if (n === 0) return "green";
-  if (RED_NUMBERS.has(n)) return "red";
-  return "black";
-}
-
-// Implementation of spinWheel and related state moved inside component
-function spinWheel() {
-  // Implementation is inside the main component above
 }
