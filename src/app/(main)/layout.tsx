@@ -9,18 +9,22 @@ export default function MainLayout({ children }: { children: ReactNode }) {
     <SidebarProvider defaultOpen={true}>
       {/* Cambiamos flex-col por un simple flex para que SidebarNav quede a la izquierda */}
       <div className="flex min-h-screen">
-        {/* SidebarNav siempre a la izquierda */}
+        {/* SidebarNav always on the left */}
         <SidebarNav />
 
-        {/* Este contenedor ocupa el resto del ancho (flex-1 w-full) */}
+        {/* Main content container */}
         <SidebarInset>
           <div className="flex flex-col flex-1 w-full">
             <Header />
-            <main className="flex-1 w-full p-4 md:p-6 lg:p-8">
-              {children}
+            <main className="flex-1 w-full px-4 md:px-6 lg:px-8 py-6">
+              <div className="max-w-7xl mx-auto w-full">
+                {children}
+              </div>
             </main>
-            <footer className="py-6 px-4 md:px-6 text-center text-sm text-muted-foreground border-t">
-              © {new Date().getFullYear()} Crypto Casino Royale. All rights reserved.
+            <footer className="w-full py-6 px-4 md:px-6 text-center text-sm text-muted-foreground border-t">
+              <div className="max-w-7xl mx-auto">
+                © {new Date().getFullYear()} Crypto Casino Royale. All rights reserved.
+              </div>
             </footer>
           </div>
         </SidebarInset>

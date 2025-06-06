@@ -134,7 +134,7 @@ export default function RoulettePage() {
           <div className="relative overflow-hidden border rounded-lg h-16 bg-muted">
             <div className="absolute inset-y-0 left-1/2 w-1 border-l-2 border-yellow-400 z-10" />
             <motion.div
-              className="flex items-center h-16 gap-4 px-2 min-w-[200%]"
+              className="flex items-center h-16 gap-4 px-2 w-[800px]"
               animate={controls}
               initial={{ x: 0 }}
             >
